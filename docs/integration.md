@@ -119,6 +119,7 @@ app was built without craft-fonts. Code that uses it must work when it is empty.
   with `CRAFT_FONTS_DIR` set and shrink `WEB_FONTS` (even to empty) if it fails.
 - Prefer `BIZ UDPGothic` for UI text and `Shippori Mincho` / `BIZ UDMincho` for serif document
   text.
+- Prefer `Noto Sans Arabic` for Arabic UI text and `Amiri` for Arabic document text.
 - Tests that assert on these fonts' glyphs must skip (not fail) when `CRAFT_FONTS` is empty, and
   CI should run them with `CRAFT_FONTS_DIR` set so they are exercised.
 

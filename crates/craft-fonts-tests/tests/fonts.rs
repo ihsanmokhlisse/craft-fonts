@@ -204,6 +204,21 @@ fn arabic_fonts_cover_arabic_text() {
 }
 
 #[test]
+fn arabic_document_text_is_amiri_and_ui_stays_noto() {
+    let arab: Vec<&Font> = for_script("Arab").collect();
+    assert!(
+        arab.iter()
+            .any(|f| f.family == "Noto Sans Arabic" && f.style == "Regular"),
+        "Noto Sans Arabic Regular is the Arabic UI face"
+    );
+    assert!(
+        arab.iter()
+            .any(|f| f.family == "Amiri" && f.style == "Regular"),
+        "Amiri Regular is the Arabic document face"
+    );
+}
+
+#[test]
 fn thai_fonts_cover_thai_text() {
     covers(
         "Thai",
