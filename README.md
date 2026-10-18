@@ -19,7 +19,7 @@ This library is meant to have the following:
 | Path | What |
 |---|---|
 | `fonts/` | The font files, one directory per family, each with its licence. |
-| `fonts/manifest.txt` | Machine-readable list of every font: family, style, file, scripts, licence, SHA-256, pinned source, and a role (`ui`, `document`, or `both`). |
+| `fonts/manifest.txt` | Machine-readable list of every font: family, style, file, scripts, licence, SHA-256, pinned source. |
 | `ATTRIBUTION.md` | Authors, pinned sources and licences. |
 | `crates/craft-fonts` | Rust: the manifest as a static table, finding a checkout (`CRAFT_FONTS_DIR`), loading it, and an `embed` feature that compiles the fonts in. |
 | `crates/craft-fonts-tests` | Tests asserted on these fonts: checksums, licences, family names, Japanese coverage and outlines, vertical-text (`vert`/`vrt2`) support. |
@@ -33,8 +33,7 @@ This library is meant to have the following:
 | Shippori Mincho | Regular | Japanese document text (serif) | OFL-1.1 |
 | BIZ UDMincho | Regular | Japanese document text (serif) | OFL-1.1 |
 | Noto Sans CJK SC | Regular | Simplified Chinese UI and document text (sans) | OFL-1.1 |
-| Noto Sans Arabic | Regular (variable: wdth, wght) | Arabic UI text (sans) | OFL-1.1 |
-| Amiri | Regular | Arabic document text (naskh) | OFL-1.1 |
+| Noto Sans Arabic | Regular (variable: wdth, wght) | Arabic UI and document text (sans) | OFL-1.1 |
 | Noto Sans Thai | Regular (variable: wdth, wght) | Thai UI and document text (sans) | OFL-1.1 |
 | Noto Sans Georgian | Regular (variable: wdth, wght) | Georgian UI and document text (sans) | OFL-1.1 |
 

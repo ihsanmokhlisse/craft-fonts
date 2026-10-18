@@ -21,21 +21,17 @@ pub struct Entry {
     pub sha256: String,
     /// Where the file came from (a pinned upstream URL).
     pub source: String,
-    /// `ui`, `document`, or `both`. An omitted field means `both`.
-    pub role: String,
 }
 
 /// Why a manifest line could not be read.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ManifestError {
-    /// The line does not have 8 fields, or 9 when `role` is set.
+    /// The line does not have the 8 `" | "`-separated fields.
     FieldCount { line: usize, found: usize },
     /// A field is empty.
     EmptyField { line: usize, field: &'static str },
     /// The SHA-256 is not 64 lower-case hex digits.
     BadSha256 { line: usize },
-    /// `role` is not `ui`, `document`, or `both`.
-    BadRole { line: usize },
 }
 
 impl std::fmt::Display for ManifestError {
@@ -43,7 +39,7 @@ impl std::fmt::Display for ManifestError {
         match self {
             Self::FieldCount { line, found } => write!(
                 f,
-                "manifest line {line}: expected 8 fields separated by \" | \", or 9 with a role, found {found}"
+                "manifest line {line}: expected 8 fields separated by \" | \", found {found}"
             ),
             Self::EmptyField { line, field } => {
                 write!(f, "manifest line {line}: the {field} field is empty")
@@ -52,12 +48,6 @@ impl std::fmt::Display for ManifestError {
                 f,
                 "manifest line {line}: sha256 must be 64 lower-case hex digits"
             ),
-            Self::BadRole { line } => {
-                write!(
-                    f,
-                    "manifest line {line}: role must be ui, document, or both"
-                )
-            }
         }
     }
 }
@@ -85,12 +75,6 @@ pub fn parse_manifest(text: &str) -> Result<Vec<Entry>, ManifestError> {
             continue;
         }
         let fields: Vec<&str> = trimmed.split(" | ").map(str::trim).collect();
-        if fields.len() != 8 && fields.len() != 9 {
-            return Err(ManifestError::FieldCount {
-                line,
-                found: fields.len(),
-            });
-        }
         let [
             family,
             style,
@@ -100,13 +84,13 @@ pub fn parse_manifest(text: &str) -> Result<Vec<Entry>, ManifestError> {
             licence_file,
             sha256,
             source,
-        ] = [
-            fields[0], fields[1], fields[2], fields[3], fields[4], fields[5], fields[6], fields[7],
-        ];
-        let role = if fields.len() == 9 { fields[8] } else { "both" };
-        if !matches!(role, "ui" | "document" | "both") {
-            return Err(ManifestError::BadRole { line });
-        }
+        ] = fields.as_slice()
+        else {
+            return Err(ManifestError::FieldCount {
+                line,
+                found: fields.len(),
+            });
+        };
         for (name, value) in FIELDS.iter().zip([
             family,
             style,
@@ -141,7 +125,6 @@ pub fn parse_manifest(text: &str) -> Result<Vec<Entry>, ManifestError> {
             licence_file: (*licence_file).to_string(),
             sha256: (*sha256).to_string(),
             source: (*source).to_string(),
-            role: (*role).to_string(),
         });
     }
     Ok(out)

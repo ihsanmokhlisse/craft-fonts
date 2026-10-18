@@ -1,6 +1,6 @@
 //! Assertions on the font files themselves.
 
-use craft_fonts::{FONTS, Font, for_role, for_script};
+use craft_fonts::{FONTS, Font, for_script};
 use sha2::{Digest, Sha256};
 use skrifa::raw::TableProvider;
 use skrifa::{FontRef, MetadataProvider, string::StringId};
@@ -201,30 +201,6 @@ fn arabic_fonts_cover_arabic_text() {
             "،؛؟",
         ),
     );
-}
-
-#[test]
-fn arabic_roles_keep_amiri_for_documents_and_noto_for_ui() {
-    let document: Vec<&Font> = for_script("Arab")
-        .filter(|f| f.role == "document")
-        .collect();
-    assert_eq!(document.len(), 1, "one Arabic document face");
-    assert_eq!(
-        (document[0].family, document[0].style),
-        ("Amiri", "Regular")
-    );
-    assert!(
-        document[0].scripts.contains(&"Latn"),
-        "Amiri covers ASCII Latin, so its scripts include Latn"
-    );
-    let ui: Vec<&str> = for_script("Arab")
-        .filter(|f| f.role == "ui")
-        .map(|f| f.family)
-        .collect();
-    assert_eq!(ui, ["Noto Sans Arabic"]);
-    assert!(for_role("document").any(|f| f.family == "Amiri"));
-    assert!(!for_role("ui").any(|f| f.family == "Amiri"));
-    assert!(!for_role("document").any(|f| f.family == "Noto Sans Arabic"));
 }
 
 #[test]
