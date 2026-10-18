@@ -44,6 +44,8 @@ pub struct Font {
     pub sha256: &'static str,
     /// Pinned upstream source.
     pub source: &'static str,
+    /// `ui`, `document`, or `both`. Apps select with this; a README sentence is not a selector.
+    pub role: &'static str,
 }
 
 include!(concat!(env!("OUT_DIR"), "/manifest.rs"));
@@ -51,6 +53,11 @@ include!(concat!(env!("OUT_DIR"), "/manifest.rs"));
 /// The fonts meant for an ISO 15924 script (e.g. `"Jpan"`), in manifest order.
 pub fn for_script(script: &str) -> impl Iterator<Item = &'static Font> + '_ {
     FONTS.iter().filter(move |f| f.scripts.contains(&script))
+}
+
+/// The fonts whose [`Font::role`] is `role` (`"ui"`, `"document"`, or `"both"`), in manifest order.
+pub fn for_role(role: &str) -> impl Iterator<Item = &'static Font> + '_ {
+    FONTS.iter().filter(move |f| f.role == role)
 }
 
 /// The compiled-in bytes of a font from [`FONTS`] (`embed` feature). `None` for any other value.
@@ -125,8 +132,13 @@ mod tests {
         assert_eq!(entries.len(), FONTS.len());
         for (e, f) in entries.iter().zip(FONTS) {
             assert_eq!(
-                (e.family.as_str(), e.style.as_str(), e.file.as_str()),
-                (f.family, f.style, f.file)
+                (
+                    e.family.as_str(),
+                    e.style.as_str(),
+                    e.file.as_str(),
+                    e.role.as_str()
+                ),
+                (f.family, f.style, f.file, f.role)
             );
         }
         assert!(for_script("Jpan").count() >= 1);
@@ -149,6 +161,16 @@ mod tests {
         assert_eq!(
             parse_manifest("A | B | f | Jpan | OFL-1.1 | l | XYZ | s"),
             Err(ManifestError::BadSha256 { line: 1 })
+        );
+        let sha = "0".repeat(64);
+        let with_role = format!("A | B | f | Arab | OFL-1.1 | l | {sha} | s | document");
+        assert_eq!(parse_manifest(&with_role).unwrap()[0].role, "document");
+        let omitted = format!("A | B | f | Arab | OFL-1.1 | l | {sha} | s");
+        assert_eq!(parse_manifest(&omitted).unwrap()[0].role, "both");
+        let bad_role = format!("A | B | f | Arab | OFL-1.1 | l | {sha} | s | text");
+        assert_eq!(
+            parse_manifest(&bad_role),
+            Err(ManifestError::BadRole { line: 1 })
         );
         assert_eq!(parse_manifest("# comment\n\n"), Ok(Vec::new()));
     }

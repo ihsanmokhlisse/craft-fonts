@@ -72,6 +72,10 @@ fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
         let [family, style, file, scripts, ..] = f.as_slice() else {
             return Err(format!("malformed manifest line: {line}"));
         };
+        let role = match f.get(8).copied().unwrap_or("both") {
+            role @ ("ui" | "document" | "both") => role,
+            role => return Err(format!("manifest line {line}: role must be ui, document, or both, found {role}")),
+        };
         if wasm && !WEB_FONTS.contains(&(*family, *style)) {
             continue;
         }
@@ -80,7 +84,7 @@ fn craft_fonts(dir: &std::path::Path) -> Result<String, String> {
         let scripts: Vec<String> = scripts.split(',').map(|s| format!("{:?}", s.trim())).collect();
         let _ = writeln!(
             out,
-            "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], bytes: include_bytes!({:?}) }},",
+            "    CraftFont {{ family: {family:?}, style: {style:?}, scripts: &[{}], role: {role:?}, bytes: include_bytes!({:?}) }},",
             scripts.join(", "),
             path.display().to_string(),
         );
@@ -98,6 +102,8 @@ pub struct CraftFont {
     pub style: &'static str,
     /// ISO 15924 scripts the font is for, e.g. `"Jpan"`.
     pub scripts: &'static [&'static str],
+    /// `ui`, `document`, or `both`. Omitted manifest lines are `both`.
+    pub role: &'static str,
     pub bytes: &'static [u8],
 }
 
@@ -118,8 +124,12 @@ app was built without craft-fonts. Code that uses it must work when it is empty.
   ~24 MB, over typical per-file hosting limits. If the app's web build has a size check, measure
   with `CRAFT_FONTS_DIR` set and shrink `WEB_FONTS` (even to empty) if it fails.
 - Prefer `BIZ UDPGothic` for UI text and `Shippori Mincho` / `BIZ UDMincho` for serif document
-  text.
-- Prefer `Noto Sans Arabic` for Arabic UI text and `Amiri` for Arabic document text.
+  text. Those lines omit `role`, which means `both`: they stay in the UI fallback and in document
+  text, as they do today.
+- Select on `role`. UI fallback includes `ui` and `both` and skips `document`. Document text
+  includes `document` and `both` and skips `ui`. Arabic UI is Noto Sans Arabic (`ui`); Arabic
+  document text is Amiri (`document`). A fallback that takes every non-Latin face also takes a
+  document face until it reads `role`. LightCraft's `ui_fallback` does that today.
 - Tests that assert on these fonts' glyphs must skip (not fail) when `CRAFT_FONTS` is empty, and
   CI should run them with `CRAFT_FONTS_DIR` set so they are exercised.
 
@@ -147,7 +157,12 @@ craft-fonts' `ATTRIBUTION.md`.
 
 ## Adding a font
 
-1. Put the file and its licence under `fonts/<family>/`, from a pinned upstream commit.
-2. Add a manifest line (with its SHA-256) and an `ATTRIBUTION.md` row.
-3. `cargo test --workspace`: `craft-fonts-tests` checks the checksum, licence, family name and,
+1. Check open pull requests for the same `fonts/<family>/` path. One path can hold one build of a
+   file; say which pinned source this PR keeps.
+2. Put the file and its licence under `fonts/<family>/`, from a pinned upstream commit.
+3. Add a manifest line (with its SHA-256) and an `ATTRIBUTION.md` row. Set `role` to `ui` or
+   `document` only when that is the face's job, and assert that role in `craft-fonts-tests`. A
+   sentence in the README does not select the face. If the file covers `A–Z`, `a–z` and `0–9`,
+   list `Latn` next to its other scripts.
+4. `cargo test --workspace`: `craft-fonts-tests` checks the checksum, licence, family name and,
    for Japanese fonts, coverage and vertical-text support. Add assertions for any new script.
