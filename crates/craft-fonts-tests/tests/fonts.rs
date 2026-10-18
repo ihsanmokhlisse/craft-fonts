@@ -217,6 +217,52 @@ fn thai_fonts_cover_thai_text() {
 }
 
 #[test]
+fn scheherazade_new_joins_arabic_letters() {
+    let face = FONTS
+        .iter()
+        .find(|f| f.family == "Scheherazade New" && f.style == "Regular");
+    let Some(face) = face else {
+        panic!("Scheherazade New Regular is not in the manifest");
+    };
+    assert!(
+        face.scripts.contains(&"Arab"),
+        "Scheherazade New is an Arabic face"
+    );
+    let data = bytes(face);
+    let font = FontRef::new(&data).unwrap_or_else(|e| panic!("{}: {e}", face.file));
+    let gsub = font
+        .gsub()
+        .unwrap_or_else(|e| panic!("{}: no GSUB: {e}", face.file));
+    let features = gsub
+        .feature_list()
+        .unwrap_or_else(|e| panic!("{}: GSUB features: {e}", face.file));
+    let tags: Vec<String> = features
+        .feature_records()
+        .iter()
+        .map(|r| r.feature_tag().to_string())
+        .collect();
+    for tag in ["init", "medi", "fina"] {
+        assert!(
+            tags.iter().any(|t| t == tag),
+            "{} has no {tag} GSUB feature",
+            face.file
+        );
+    }
+    let licence = std::fs::read_to_string(craft_fonts_tests::repo_root().join(face.licence_file))
+        .unwrap_or_else(|e| panic!("{}: {e}", face.licence_file));
+    let head = licence
+        .lines()
+        .take(8)
+        .collect::<Vec<_>>()
+        .join("\n")
+        .to_ascii_lowercase();
+    assert!(
+        !head.contains("adobe") && !head.contains("microsoft"),
+        "the copyright notice names Adobe or Microsoft"
+    );
+}
+
+#[test]
 fn georgian_fonts_cover_georgian_text() {
     covers(
         "Geor",
