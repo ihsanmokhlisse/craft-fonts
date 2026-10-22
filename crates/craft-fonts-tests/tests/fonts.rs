@@ -221,11 +221,13 @@ fn every_arabic_font_joins_letters() {
     // Arabic letters take initial, medial and final forms, and lam-alef needs `rlig`.
     // A font without these GSUB features draws every letter isolated.
     let arab: Vec<&Font> = for_script("Arab").collect();
-    assert!(
-        arab.iter()
-            .any(|f| f.family == "Scheherazade New" && f.style == "Regular"),
-        "Scheherazade New Regular is not in the manifest"
-    );
+    for style in ["Regular", "Medium", "SemiBold", "Bold"] {
+        assert!(
+            arab.iter()
+                .any(|f| f.family == "Scheherazade New" && f.style == style),
+            "Scheherazade New {style} is not in the manifest"
+        );
+    }
     let first = arab
         .first()
         .unwrap_or_else(|| panic!("the manifest lists no Arabic font"));
